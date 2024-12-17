@@ -1,43 +1,46 @@
-use std::time;
-
-use gradescope::LatestSubmission;
-
 mod gradescope;
 
+use camino::Utf8PathBuf;
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(version, about, long_about=None)]
+#[command(propagate_version = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Count {
+        #[clap(required = true)]
+        filepaths: Vec<Utf8PathBuf>,
+    },
+}
+
 fn main() {
-    let filenames = vec![
-        "/Users/robcond/Documents/Code/Rufus/a1_1.yml",
-        "/Users/robcond/Documents/Code/Rufus/a1_2.yml",
-    ]
-    .repeat(5);
+    let args = Cli::parse();
 
-    let mut all_submissions: Vec<LatestSubmission> = Vec::new();
+    match &args.command {
+        Commands::Count { filepaths } => {
+            let mut total_count: usize = 0;
 
-    println!("Loading submissions");
-    let start = time::Instant::now();
-    {
-        // load all submissions
-        for filename in filenames {
-            print!("Loading {}... ", filename);
+            for path in filepaths {
+                let fname = path.file_name().unwrap_or("");
 
-            let start = time::Instant::now();
-            match gradescope::load_export(filename) {
-                Ok(export) => {
-                    // collect all submissions and push them into a vector (owned)
-                    println!(
-                        "DONE in {} ms ({} submissions)",
-                        start.elapsed().as_millis(),
-                        export.len()
-                    );
-                    all_submissions.extend(export.into_values()); // your submissions are mine now! (i.e. all your base are belong to us)
+                match gradescope::load_export(&path) {
+                    Ok(export) => {
+                        println!("{}: {}", fname, export.len());
+                        total_count += export.len();
+                    }
+                    Err(e) => {
+                        eprintln!("{}: {}", fname, e);
+                    }
                 }
-                Err(e) => eprintln!("ERROR in {} ms\n{}", start.elapsed().as_millis(), e),
             }
+
+            println!("=> Total: {} submissions", total_count);
         }
     }
-    println!(
-        "Loaded {} submissions in {} ms",
-        all_submissions.len(),
-        start.elapsed().as_millis()
-    );
 }
