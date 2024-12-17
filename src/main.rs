@@ -1,57 +1,43 @@
-use std::{
-    sync::{Arc, Mutex},
-    thread::JoinHandle,
-    time,
-};
+use std::time;
 
-#[allow(dead_code)]
+use gradescope::LatestSubmission;
+
 mod gradescope;
 
 fn main() {
-    let filenames: Vec<String> = vec![
-        "/Users/robcond/Documents/Code/Rufus/a1_1.yml".to_string(),
-        "/Users/robcond/Documents/Code/Rufus/a1_2.yml".to_string(),
-        "/Users/robcond/Documents/Code/Rufus/a1_1.yml".to_string(),
-        "/Users/robcond/Documents/Code/Rufus/a1_2.yml".to_string(),
-        "/Users/robcond/Documents/Code/Rufus/a1_1.yml".to_string(),
-        "/Users/robcond/Documents/Code/Rufus/a1_2.yml".to_string(),
-        "/Users/robcond/Documents/Code/Rufus/a1_1.yml".to_string(),
-        "/Users/robcond/Documents/Code/Rufus/a1_2.yml".to_string(),
-        "/Users/robcond/Documents/Code/Rufus/a1_1.yml".to_string(),
-    ];
+    let filenames = vec![
+        "/Users/robcond/Documents/Code/Rufus/a1_1.yml",
+        "/Users/robcond/Documents/Code/Rufus/a1_2.yml",
+    ]
+    .repeat(5);
 
-    let all: Arc<Mutex<Vec<gradescope::Export>>> = Arc::new(Mutex::new(Vec::new()));
+    let mut all_submissions: Vec<LatestSubmission> = Vec::new();
 
     println!("Loading submissions");
-
     let start = time::Instant::now();
+    {
+        // load all submissions
+        for filename in filenames {
+            print!("Loading {}... ", filename);
 
-    let handles: Vec<JoinHandle<_>> = filenames
-        .into_iter()
-        .map(|filename| {
-            let all = Arc::clone(&all);
-            let join_handle = std::thread::spawn(move || {
-                let result = gradescope::load_export(&filename);
-                if let Ok(result) = result {
-                    let mut all = all.lock().unwrap();
-                    all.push(result);
+            let start = time::Instant::now();
+            match gradescope::load_export(filename) {
+                Ok(export) => {
+                    // collect all submissions and push them into a vector (owned)
+                    println!(
+                        "DONE in {} ms ({} submissions)",
+                        start.elapsed().as_millis(),
+                        export.len()
+                    );
+                    all_submissions.extend(export.into_values()); // your submissions are mine now! (i.e. all your base are belong to us)
                 }
-            });
-            join_handle
-        })
-        .collect();
-
-    // join all the threads and check for errors
-    let results: Vec<_> = handles.into_iter().map(|handle| handle.join()).collect();
-    if results.iter().any(|result| result.is_err()) {
-        println!("Error loading submissions");
-        return;
+                Err(e) => eprintln!("ERROR in {} ms\n{}", start.elapsed().as_millis(), e),
+            }
+        }
     }
-    println!("Loaded submissions in {}ms", start.elapsed().as_millis());
-
-    // Redeclare all as a vector of Export
-
-    // find total number of submissions
-    let total_submissions: usize = all.lock().unwrap().iter().map(|export| export.len()).sum();
-    println!("Total submissions: {}", total_submissions);
+    println!(
+        "Loaded {} submissions in {} ms",
+        all_submissions.len(),
+        start.elapsed().as_millis()
+    );
 }
