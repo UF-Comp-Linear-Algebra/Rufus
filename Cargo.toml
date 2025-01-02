@@ -7,5 +7,6 @@ edition = "2021"
 [dependencies]
 camino = "1.1.9"
 clap = { version = "4.5.23", features = ["cargo", "derive"] }
+rayon = "1.10.0"
 serde = { version = "1.0.216", features = ["derive"] }
 serde_yaml = "0.9.34"

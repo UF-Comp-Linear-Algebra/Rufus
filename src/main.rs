@@ -1,3 +1,4 @@
+mod cli;
 mod gradescope;
 
 use camino::Utf8PathBuf;
@@ -20,30 +21,20 @@ enum Command {
         #[arg(name = "export files")]
         filepaths: Vec<Utf8PathBuf>,
     },
+
+    #[command(about = "Detect plagiarism in the given export files")]
+    Hunt {
+        #[clap(required = true)]
+        #[arg(name = "export files")]
+        filepaths: Vec<Utf8PathBuf>,
+    },
 }
 
 fn main() {
     let args = Cli::parse();
 
     match &args.command {
-        Command::Count { filepaths } => {
-            let mut total_count: usize = 0;
-
-            for path in filepaths {
-                let fname = path.file_name().unwrap_or("");
-
-                match gradescope::load_export(&path) {
-                    Ok(export) => {
-                        println!("{}: {}", fname, export.len());
-                        total_count += export.len();
-                    }
-                    Err(e) => {
-                        eprintln!("{}: {}", fname, e);
-                    }
-                }
-            }
-
-            println!("=> Total: {} submissions", total_count);
-        }
+        Command::Count { filepaths } => cli::handle_count(filepaths),
+        Command::Hunt { filepaths } => cli::handle_hunt(filepaths),
     }
 }
