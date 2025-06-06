@@ -1,40 +1,43 @@
 mod cli;
 mod gradescope;
+mod rufus;
 
-use camino::Utf8PathBuf;
-use clap::{crate_authors, crate_description, crate_name, crate_version, Parser, Subcommand};
+use clap::Parser;
 
-#[derive(Parser)]
-#[command(name = crate_name!(), author=crate_authors!())]
-#[command(version=crate_version!(), propagate_version=true)]
-#[command(about="A tool for detecting plagiarism in Gradescope submissions", long_about=crate_description!())]
-struct Cli {
-    #[command(subcommand)]
-    command: Command,
-}
-
-#[derive(Debug, Subcommand)]
-enum Command {
-    #[command(about = "Count the number of submissions in the given export files")]
-    Count {
-        #[clap(required = true)]
-        #[arg(name = "export files")]
-        filepaths: Vec<Utf8PathBuf>,
-    },
-
-    #[command(about = "Detect plagiarism in the given export files")]
-    Hunt {
-        #[clap(required = true)]
-        #[arg(name = "export files")]
-        filepaths: Vec<Utf8PathBuf>,
-    },
-}
+use crate::cli::clap::{Cli, Command};
 
 fn main() {
     let args = Cli::parse();
 
     match &args.command {
-        Command::Count { filepaths } => cli::handle_count(filepaths),
-        Command::Hunt { filepaths } => cli::handle_hunt(filepaths),
+        Command::Count { filepaths } => cli::handlers::handle_count(&filepaths),
+        Command::Hunt {
+            filepaths,
+            group_size,
+            show_emissions,
+            min_size,
+            exact,
+        } => cli::handlers::handle_hunt(
+            &filepaths,
+            group_size,
+            &show_emissions,
+            &(*min_size as usize),
+            &exact,
+        ),
+        Command::Test { emission } => {
+            println!("Testing emission parsing for: {}", emission);
+            rufus::Emission::parse(&emission)
+                .and_then(|e| {
+                    println!(
+                        "Parsed emission: id = '{}', value = '{}'",
+                        e.id(),
+                        e.value()
+                    );
+                    Ok(())
+                })
+                .unwrap_or_else(|e| {
+                    eprintln!("Error parsing emission: {}", e);
+                });
+        }
     }
 }
