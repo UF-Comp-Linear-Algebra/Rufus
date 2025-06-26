@@ -12,9 +12,22 @@ pub fn load_export<T: AsRef<Path>>(path: T) -> Result<Export, String> {
 }
 
 pub fn load_exports(filepaths: &Vec<Utf8PathBuf>) -> Result<Vec<Export>, String> {
-    // Load the exports in parallel (errors propagate up)
-    match filepaths.par_iter().map(load_export).collect() {
-        Ok(exports) => Ok(exports),
-        Err(e) => Err(e.to_string()),
+    // Load the exports in parallel and aggregate errors
+    let results: Vec<Result<Export, String>> = filepaths.par_iter().map(load_export).collect();
+    
+    let mut exports = Vec::new();
+    let mut errors = Vec::new();
+    
+    for result in results {
+        match result {
+            Ok(export) => exports.push(export),
+            Err(err) => errors.push(err),
+        }
+    }
+    
+    if !errors.is_empty() {
+        Err(errors.join("; "))
+    } else {
+        Ok(exports)
     }
 }
