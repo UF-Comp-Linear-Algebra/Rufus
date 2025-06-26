@@ -49,11 +49,4 @@ pub enum Command {
         )]
         exact: bool,
     },
-
-    #[command(about = "Test the emission parsing")]
-    Test {
-        #[clap(required = true)]
-        #[arg(name = "emision")]
-        emission: String,
-    },
 }

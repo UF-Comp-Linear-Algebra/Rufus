@@ -24,20 +24,5 @@ fn main() {
             &(*min_size as usize),
             &exact,
         ),
-        Command::Test { emission } => {
-            println!("Testing emission parsing for: {}", emission);
-            rufus::Emission::parse(&emission)
-                .and_then(|e| {
-                    println!(
-                        "Parsed emission: id = '{}', value = '{}'",
-                        e.id(),
-                        e.value()
-                    );
-                    Ok(())
-                })
-                .unwrap_or_else(|e| {
-                    eprintln!("Error parsing emission: {}", e);
-                });
-        }
     }
 }
