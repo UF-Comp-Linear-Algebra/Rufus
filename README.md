@@ -7,13 +7,13 @@ A general-purpose tool for detecting cheating in autograded Gradescope code subm
 You can download pre-built binaries for Linux, macOS, and Windows from the [GitHub Releases page](https://github.com/<your-username>/<your-repo>/releases).
 
 - **Linux:** `rufus-linux`
-- **macOS:** `rufus-macos` (signed and notarized)
+- **macOS:** `rufus-macos`
 - **Windows:** `rufus-windows.exe`
 
 ### Usage
 
 1. Download the appropriate binary for your platform.
-2. (Optional) On Linux/macOS, make it executable:
+2. On Linux/macOS, make it executable:
    ```bash
    chmod +x rufus-<platform>
    ```
@@ -26,7 +26,7 @@ You can download pre-built binaries for Linux, macOS, and Windows from the [GitH
    ./rufus-<platform> --help
    ```
 
-See the [Releases page](https://github.com/<your-username>/<your-repo>/releases) for the latest version.
+See the [Releases page](https://github.com/UF-Comp-Linear-Algebra/Rufus/releases) for the latest version.
 
 ---
 
