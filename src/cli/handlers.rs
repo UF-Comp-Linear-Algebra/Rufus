@@ -72,12 +72,7 @@ pub fn handle_hunt(
         min_size.to_string().blue()
     );
 
-    /* TODO: Implement --exact logic */
-    if *exact {
-        panic!("Exact mode is not implemented yet!");
-    }
-
-    let groups = hunt(&emissions, k, false)
+    let groups = hunt(&emissions, k, *exact)
         .into_iter()
         .filter(|g| g.len() >= *min_size)
         .sorted_by_key(|g| g.len())
@@ -91,7 +86,7 @@ pub fn handle_hunt(
     }
 }
 
-pub fn hunt<'a>(groups: &'a [EmissionsGroup<'a>], k: usize, _exact: bool) -> Vec<Grouping<'a>> {
+pub fn hunt<'a>(groups: &'a [EmissionsGroup<'a>], k: usize, exact: bool) -> Vec<Grouping<'a>> {
     let all_emission_ids: BTreeSet<&String> =
         groups.iter().flat_map(|g| g.emission_ids()).collect();
 
@@ -107,7 +102,7 @@ pub fn hunt<'a>(groups: &'a [EmissionsGroup<'a>], k: usize, _exact: bool) -> Vec
 
             let add_to_grouped = grouped_for_curr_ids
                 .iter_mut()
-                .find(|grouping| grouping.matches_group_on_ids(group_a, Some(&on_ids)));
+                .find(|grouping| grouping.matches_group_on_ids(group_a, Some(&on_ids), exact));
 
             match add_to_grouped {
                 Some(grouping) => {

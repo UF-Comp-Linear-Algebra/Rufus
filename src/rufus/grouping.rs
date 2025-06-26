@@ -32,11 +32,12 @@ impl<'a> Grouping<'a> {
         &self,
         group: &EmissionsGroup<'a>,
         on_ids: Option<&BTreeSet<&String>>,
+        exact: bool,
     ) -> bool {
         on_ids.is_none_or(|on_ids| on_ids.is_subset(&self.on_ids))
             && self
                 .groups
                 .get(0)
-                .is_some_and(|g| group.matches_on_ids(g, on_ids))
+                .is_some_and(|g| group.matches_on_ids(g, on_ids, exact))
     }
 }

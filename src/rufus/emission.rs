@@ -3,8 +3,8 @@ use base64::Engine;
 
 #[derive(Clone)]
 pub struct Emission {
-    id: String,
-    value: String,
+    pub id: String,
+    pub value: String,
 }
 
 pub enum EmissionParseError {
