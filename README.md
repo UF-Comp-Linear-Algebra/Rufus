@@ -1,26 +1,68 @@
 # Rufus
 
-A general-purpose tool for detecting cheating in autogradedGradescope code submissions by cross-referencing emissions of values that ought to be unique class-wide.
+A general-purpose tool for detecting cheating in autograded Gradescope code submissions by cross-referencing emissions of values that ought to be unique class-wide.
 
-## Rust Installation
+## Pre-built Binaries (Recommended)
 
-To install Rufus, you need to have Rust installed on your system. If you haven't installed Rust yet, you can do so by following the instructions at [rustup.rs](https://www.rust-lang.org/tools/install).
+You can download pre-built binaries for Linux, macOS, and Windows from the [GitHub Releases page](https://github.com/<your-username>/<your-repo>/releases).
 
-## Running Rufus
+- **Linux:** `rufus-linux`
+- **macOS:** `rufus-macos` (signed and notarized)
+- **Windows:** `rufus-windows.exe`
 
-To run Rufus, you can use the following command:
+### Usage
+
+1. Download the appropriate binary for your platform.
+2. (Optional) On Linux/macOS, make it executable:
+   ```bash
+   chmod +x rufus-<platform>
+   ```
+3. Run the binary from your terminal:
+   ```bash
+   ./rufus-<platform> [SUBCOMMAND] [ARGS]
+   ```
+4. For help and available commands:
+   ```bash
+   ./rufus-<platform> --help
+   ```
+
+See the [Releases page](https://github.com/<your-username>/<your-repo>/releases) for the latest version.
+
+---
+
+## Development
+
+If you want to build or modify Rufus, follow these instructions:
+
+### Prerequisites
+
+- [Rust](https://www.rust-lang.org/tools/install) (install via [rustup.rs](https://www.rust-lang.org/tools/install))
+
+### Building from Source
+
+Clone the repository and build the project:
+
+```bash
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
+cargo build --release
+```
+
+### Running from Source
+
+You can run Rufus directly with Cargo:
 
 ```bash
 cargo run --release -- [SUBCOMMAND] [ARGS]
 ```
 
-For example, to hunt for cheating submissions, you can use:
+For example, to hunt for cheating submissions:
 
 ```bash
 cargo run --release -- hunt [FILES] --show-emissions
 ```
 
-You can also run Rufus with the `--help` flag to see a list of available subcommands and options:
+For help and available commands:
 
 ```bash
 cargo run --release -- --help
