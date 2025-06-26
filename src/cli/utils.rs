@@ -24,13 +24,18 @@ pub fn print_group(group_num: usize, grouping: &Grouping, show_emissions: bool) 
     // Print emissions that matched the grouping criteria
     if show_emissions {
         print!("\n\t{}", format!("Emissions:").underline());
-        let first = grouping.groups().first().unwrap();
-        for id in grouping.on_ids() {
-            let some_emission = first.emissions_map().get(*id).unwrap();
-
-            println!();
-            println!("\t\"{}\"", some_emission.id().italic());
-            println!("\t{}", some_emission.value().replace('\n', "\n\t").blue());
+        if let Some(first) = grouping.groups().first() {
+            for id in grouping.on_ids() {
+                if let Some(some_emission) = first.emissions_map().get(*id) {
+                    println!();
+                    println!("\t\"{}\"", some_emission.id().italic());
+                    println!("\t{}", some_emission.value().replace('\n', "\n\t").blue());
+                } else {
+                    println!("\tEmission not found for ID: {}", id);
+                }
+            }
+        } else {
+            println!("\n\tNo groups available to display emissions.");
         }
     }
     println!();
