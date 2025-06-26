@@ -1,17 +1,8 @@
 [package]
-name = "rufus"
-
+name = "Rufus"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-base64 = "0.22.1"
-bincode = "1.3.3"
-camino = "1.1.9"
-clap = { version = "4.5.23", features = ["cargo", "derive"] }
-colored = "3.0.0"
-itertools = "0.14.0"
-rayon = "1.10.0"
-regex = "1.11.1"
 serde = { version = "1.0.216", features = ["derive"] }
 serde_yaml = "0.9.34"
