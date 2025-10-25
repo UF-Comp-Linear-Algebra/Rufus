@@ -36,11 +36,11 @@ impl<'a> EmissionsGroup<'a> {
         &self.emissions_map
     }
 
-    pub fn emission_ids(&self) -> Keys<String, Emission> {
+    pub fn emission_ids(&self) -> Keys<'_, String, Emission> {
         self.emissions_map.keys()
     }
 
-    pub fn emissions(&self) -> Values<String, Emission> {
+    pub fn emissions(&self) -> Values<'_, String, Emission> {
         self.emissions_map.values()
     }
 
