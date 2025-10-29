@@ -39,7 +39,7 @@ pub enum Command {
         show_emissions: bool,
 
         #[arg(long = "min-size", short = 'm', default_value = "2", value_parser = clap::value_parser!(u64).range(1..), help = "Minimum number of submissions required in a group to be shown.")]
-        min_size: u64,
+        min_size: usize,
 
         #[arg(
             long = "exact",
@@ -48,5 +48,26 @@ pub enum Command {
             help = "Only show groups that match exactly on k emissions (removes k+1 group submissions from the k groups)."
         )]
         exact: bool,
+    },
+
+    // TODO: provide help info regarding how metadata file is the source-of-truth
+    #[command(about = "Search for a phrase in student submissions files (as plain-text)")]
+    Search {
+        #[clap(required = true)]
+        #[arg(name = "submissions directories")]
+        submissions_paths: Vec<Utf8PathBuf>,
+
+        #[clap(required = true)]
+        #[arg(name = "phrase", help = "Phrase to search for in student files")]
+        // TODO: implement multiple phrases
+        phrase: String,
+
+        #[arg(
+            long = "pattern",
+            short = 'P',
+            default_value = "false",
+            help = "Interpret phrase as a regex pattern"
+        )]
+        is_regex: bool,
     },
 }

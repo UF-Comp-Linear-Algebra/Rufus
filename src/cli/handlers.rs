@@ -1,6 +1,12 @@
+use anyhow::Error;
 use camino::Utf8PathBuf;
 use itertools::Itertools;
-use std::collections::BTreeSet;
+use std::{
+    collections::BTreeSet,
+    fs::File,
+    io::{BufRead, BufReader},
+};
+use walkdir::WalkDir;
 
 use colored::Colorize;
 
@@ -8,7 +14,7 @@ use crate::{
     cli::utils::print_group,
     gradescope::{
         loaders::{load_export, load_exports},
-        types::{LatestSubmission, SubmissionTrait},
+        types::{LatestSubmission, SubmissionTrait, EXPORT_FILENAME},
     },
     rufus::{EmissionsGroup, Grouping},
 };
@@ -121,4 +127,97 @@ pub fn hunt<'a>(groups: &'a [EmissionsGroup<'a>], k: usize, exact: bool) -> Vec<
     }
 
     return groupings;
+}
+
+pub fn handle_search(
+    submissions_paths: &Vec<Utf8PathBuf>,
+    phrase: &String,
+    _is_regex: &bool,
+) -> () {
+    for submissions_path in submissions_paths {
+        // Load export file
+        let export_path = submissions_path.join(EXPORT_FILENAME);
+        print!("Loading export file... ");
+        let export = load_export(&export_path);
+
+        match export {
+            Ok(e) => {
+                println!("DONE");
+                println!("Going through {} submissions... ", e.iter().count());
+
+                // Search each directory submission directory recursively
+                for submission_dir_name in e.keys() {
+                    // Collect the files in the submission directory
+                    // TODO: report directories that can't be stat'd
+                    let sub_dir = submissions_path.join(submission_dir_name);
+                    // println!("Looking in... {}", sub_dir.to_string());
+                    let sub_dir_entries: Vec<_> = WalkDir::new(sub_dir)
+                        .into_iter()
+                        .flatten() // very interesting! we can flatten from Result<T,E>[] to T[]
+                        .filter(|f| f.file_type().is_file())
+                        .collect();
+                    // println!("{} files found!", sub_dir_entries.len());
+
+                    // Search through the files and collect results
+                    // TODO: handle that cannot be read
+                    let search_results = sub_dir_entries
+                        .into_iter()
+                        .map(|e| -> Result<(_, Vec<String>), Error> {
+                            let f = File::open(e.path())?;
+                            let sections = search_file(&f, &phrase, None)?;
+                            Ok((e, sections))
+                        })
+                        .flatten()
+                        .filter(|(_, sects)| sects.len() > 0);
+
+                    // Report results
+                    for (dir, sects) in search_results {
+                        let path = dir.path().to_str();
+                        match path {
+                            Some(path) => {
+                                println!("{}", path.to_string().underline())
+                            }
+                            None => println!("{}", "???".underline()),
+                        }
+
+                        println!("{}\n", sects.join("\n---\n"))
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!(
+                    "Failed to load {} in {} as an export file: {}",
+                    EXPORT_FILENAME, submissions_path, e
+                );
+            }
+        }
+    }
+}
+
+const DEFAULT_DISPLAY_WIDTH: usize = 2;
+
+pub fn search_file(
+    file: &File,
+    phrase: &String,
+    display_width: Option<usize>,
+) -> Result<Vec<String>, Error> {
+    // TODO: consider better way to deal with default values
+    let display_width = display_width.unwrap_or(DEFAULT_DISPLAY_WIDTH);
+
+    // Read in the file as lines
+    let lines: Vec<String> = BufReader::new(file).lines().collect::<Result<_, _>>()?;
+
+    // Collect sections where the search phrase is found
+    let mut sections: Vec<String> = Vec::new();
+    for (line_num, line) in lines.iter().enumerate() {
+        // TODO: implement regex
+        if line.contains(phrase) {
+            let start: usize = line_num.saturating_sub(display_width);
+            let end: usize = (line_num + display_width + 1).min(lines.len());
+
+            sections.push(lines[start..end].join("\n"));
+        }
+    }
+
+    Ok(sections)
 }

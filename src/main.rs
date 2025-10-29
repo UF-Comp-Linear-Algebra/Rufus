@@ -24,5 +24,10 @@ fn main() {
             &(*min_size as usize),
             &exact,
         ),
+        Command::Search {
+            submissions_paths,
+            phrase,
+            is_regex,
+        } => cli::handlers::handle_search(submissions_paths, phrase, is_regex),
     }
 }
