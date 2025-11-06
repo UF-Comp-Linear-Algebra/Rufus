@@ -39,7 +39,7 @@ pub enum Command {
         show_emissions: bool,
 
         #[arg(long = "min-size", short = 'm', default_value = "2", value_parser = clap::value_parser!(u64).range(1..), help = "Minimum number of submissions required in a group to be shown.")]
-        min_size: usize,
+        min_size: u64,
 
         #[arg(
             long = "exact",
@@ -51,6 +51,10 @@ pub enum Command {
     },
 
     // TODO: provide help info regarding how metadata file is the source-of-truth
+    // TODO: case-insensitive
+    // TODO: multiple phrases
+    // TODO: regex
+    // TODO: non-typable unicode
     #[command(about = "Search for a phrase in student submissions files (as plain-text)")]
     Search {
         #[clap(required = true)]
