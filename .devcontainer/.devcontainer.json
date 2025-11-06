@@ -1,0 +1,6 @@
+{
+    "name": "Cargo",
+    "image": "mcr.microsoft.com/devcontainers/base:jammy",
+    // Install Cargo when the devcontainer is made
+    "onCreateCommand": "curl https://sh.rustup.rs -sSf | sh -s -- -y"
+}
