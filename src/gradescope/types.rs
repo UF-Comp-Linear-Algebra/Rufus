@@ -21,6 +21,33 @@ pub trait SubmissionTrait {
     fn status(&self) -> &String;
     fn results(&self) -> &Option<Results>;
 
+    fn extra_data_map(&self) -> HashMap<String, serde_yaml::Value> {
+        let extract_mapping = |v: &serde_yaml::Value| -> Vec<(String, serde_yaml::Value)> {
+            match v {
+                serde_yaml::Value::Mapping(m) => m
+                    .iter()
+                    .filter_map(|(k, v)| {
+                        if let serde_yaml::Value::String(key) = k {
+                            Some((key.clone(), v.clone()))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+                _ => vec![],
+            }
+        };
+        match self.results() {
+            Some(Results::Processed(r)) => r
+                .tests
+                .iter()
+                .filter_map(|t| t.extra_data.as_ref())
+                .flat_map(extract_mapping)
+                .collect(),
+            _ => HashMap::new(),
+        }
+    }
+
     fn parse_emissions<'a>(&'a self) -> EmissionsGroup<'a>
     where
         Self: Sized,
