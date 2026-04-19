@@ -1,5 +1,6 @@
 mod cli;
 mod extract;
+mod grade;
 mod gradescope;
 mod rufus;
 
@@ -35,6 +36,7 @@ fn main() {
             skip_missing,
             missing_only,
             dry_run,
+            alongside,
         } => cli::handlers::handle_extract(
             filepaths,
             keys,
@@ -45,6 +47,24 @@ fn main() {
             *skip_missing,
             *missing_only,
             *dry_run,
+            *alongside,
+        ),
+        Command::Grade {
+            dir,
+            course,
+            assignment,
+            export,
+            cmd,
+            state,
+            reset,
+        } => cli::handlers::handle_grade(
+            dir,         // Option<Utf8PathBuf>
+            course,      // Option<String>
+            assignment,  // Option<String>
+            export,
+            cmd,
+            state,
+            *reset,
         ),
     }
 }

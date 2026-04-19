@@ -5,6 +5,7 @@ use clap::{
 
 use crate::extract::{parse_key_spec, KeySpec, Layout, NameBy};
 
+
 #[derive(Parser)]
 #[command(name = crate_name!(), author=crate_authors!())]
 #[command(version=crate_version!(), propagate_version=true)]
@@ -109,5 +110,43 @@ pub enum Command {
 
         #[arg(long, default_value = "false", help = "Show what would be written without writing anything")]
         dry_run: bool,
+
+        #[arg(
+            long,
+            short = 'A',
+            default_value = "false",
+            conflicts_with = "output",
+            help = "Write files alongside each source YAML (implies file output)"
+        )]
+        alongside: bool,
+    },
+
+    #[command(about = "Walk extracted submissions and open Gradescope grading pages")]
+    Grade {
+        #[arg(help = "Directory of extracted submissions. Required on first run; loaded from state file on resume.")]
+        dir: Option<Utf8PathBuf>,
+
+        #[arg(long, short = 'c', help = "Gradescope course ID. Required on first run; loaded from state file on resume.")]
+        course: Option<String>,
+
+        #[arg(long, short = 'a', help = "Gradescope assignment ID. Required on first run; loaded from state file on resume.")]
+        assignment: Option<String>,
+
+        #[arg(long, short = 'e', help = "Gradescope export YAML to show submitter names")]
+        export: Option<Utf8PathBuf>,
+
+        #[arg(
+            long,
+            short = 'x',
+            value_name = "TEMPLATE",
+            help = "Command to run once per submission. Supports {dir} and {file:name} placeholders."
+        )]
+        cmd: Option<String>,
+
+        #[arg(long, short = 's', help = "Resume state file (default: <dir>/.rufus-grade)")]
+        state: Option<Utf8PathBuf>,
+
+        #[arg(long, help = "Ignore existing state and start over")]
+        reset: bool,
     },
 }
