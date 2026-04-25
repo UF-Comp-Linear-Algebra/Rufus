@@ -121,16 +121,10 @@ pub enum Command {
         alongside: bool,
     },
 
-    #[command(about = "Walk extracted submissions and open Gradescope grading pages")]
+    #[command(about = "Walk extracted submissions and run grading commands")]
     Grade {
         #[arg(help = "Directory of extracted submissions. Required on first run; loaded from state file on resume.")]
         dir: Option<Utf8PathBuf>,
-
-        #[arg(long, short = 'c', help = "Gradescope course ID. Required on first run; loaded from state file on resume.")]
-        course: Option<String>,
-
-        #[arg(long, short = 'a', help = "Gradescope assignment ID. Required on first run; loaded from state file on resume.")]
-        assignment: Option<String>,
 
         #[arg(long, short = 'e', help = "Gradescope export YAML to show submitter names")]
         export: Option<Utf8PathBuf>,

@@ -8,7 +8,7 @@ use colored::Colorize;
 use crate::{
     cli::utils::print_group,
     extract::{compute_label, decode_value, stringify_yaml_value, Decode, DecodeOutput, KeySpec, Layout, NameBy},
-    grade::{build_url, done_key, parse_submission_id, substitute_cmd, GradeState},
+    grade::{done_key, parse_submission_id, substitute_cmd, GradeState},
     gradescope::{
         loaders::{load_export, load_exports},
         types::{LatestSubmission, Submitter, SubmissionTrait},
@@ -389,8 +389,6 @@ fn run_cmd(template: &str, dir: &str) {
 
 pub fn handle_grade(
     dir_arg: &Option<Utf8PathBuf>,
-    course_arg: &Option<String>,
-    assignment_arg: &Option<String>,
     export: &Option<Utf8PathBuf>,
     cmd: &Option<String>,
     state_path: &Option<Utf8PathBuf>,
@@ -416,31 +414,13 @@ pub fn handle_grade(
         }
     });
 
-    // Resolve final params: CLI args take priority, state fills gaps
+    // Resolve dir: CLI arg takes priority, state fills gap
     let dir: Utf8PathBuf = match dir_arg.clone()
         .or_else(|| existing_state.as_ref().map(|s| Utf8PathBuf::from(&s.dir)))
     {
         Some(d) => d,
         None => {
             eprintln!("{}: <dir> is required on first run (no state file found).", "Error".red().bold());
-            return;
-        }
-    };
-    let course: String = match course_arg.clone()
-        .or_else(|| existing_state.as_ref().map(|s| s.course_id.clone()))
-    {
-        Some(c) => c,
-        None => {
-            eprintln!("{}: --course is required on first run.", "Error".red().bold());
-            return;
-        }
-    };
-    let assignment: String = match assignment_arg.clone()
-        .or_else(|| existing_state.as_ref().map(|s| s.assignment_id.clone()))
-    {
-        Some(a) => a,
-        None => {
-            eprintln!("{}: --assignment is required on first run.", "Error".red().bold());
             return;
         }
     };
@@ -493,20 +473,20 @@ pub fn handle_grade(
     // Validate consistency if resuming, then use or create state
     let mut state = match existing_state {
         Some(s) => {
-            if !s.is_consistent(&course, &assignment, dir.as_str()) {
+            if !s.is_consistent(dir.as_str()) {
                 eprintln!(
                     "{}: state file is from a different session.",
                     "Error".red().bold()
                 );
-                eprintln!("  Saved:   course={}, assignment={}, dir={}", s.course_id, s.assignment_id, s.dir);
-                eprintln!("  Current: course={}, assignment={}, dir={}", course, assignment, dir);
+                eprintln!("  Saved dir:   {}", s.dir);
+                eprintln!("  Current dir: {}", dir);
                 eprintln!("Use --reset to start over.");
                 return;
             }
             println!("Resuming — {} submission(s) already done.\n", s.done.len());
             s
         }
-        None => GradeState::new(course.clone(), assignment.clone(), dir.to_string()),
+        None => GradeState::new(dir.to_string()),
     };
 
     let steps: Vec<Step> = submissions
@@ -560,13 +540,6 @@ pub fn handle_grade(
             }
         }
 
-        // Open browser
-        let url = build_url(&course, &assignment, &step.submission_id);
-        println!("Opening: {}", url.underline());
-        if let Err(e) = open::that(&url) {
-            eprintln!("{} opening browser: {}", "Warning".yellow().bold(), e);
-        }
-
         // Prompt loop
         let show_rerun = cmd.is_some();
         loop {
@@ -597,7 +570,6 @@ pub fn handle_grade(
                 "r" => {
                     if let Some(template) = cmd {
                         run_cmd(template, step.dir.as_str());
-                        open::that(&url).ok();
                     } else {
                         println!("No --cmd specified.");
                     }

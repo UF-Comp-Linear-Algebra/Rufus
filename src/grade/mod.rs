@@ -2,19 +2,15 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::Path;
 
-const GRADESCOPE_BASE: &str = "https://www.gradescope.com";
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct GradeState {
-    pub course_id: String,
-    pub assignment_id: String,
     pub dir: String,
     pub done: HashSet<String>,
 }
 
 impl GradeState {
-    pub fn new(course_id: String, assignment_id: String, dir: String) -> Self {
-        GradeState { course_id, assignment_id, dir, done: HashSet::new() }
+    pub fn new(dir: String) -> Self {
+        GradeState { dir, done: HashSet::new() }
     }
 
     pub fn load(path: &Path) -> Result<Self, String> {
@@ -39,8 +35,8 @@ impl GradeState {
         self.done.contains(key)
     }
 
-    pub fn is_consistent(&self, course_id: &str, assignment_id: &str, dir: &str) -> bool {
-        self.course_id == course_id && self.assignment_id == assignment_id && self.dir == dir
+    pub fn is_consistent(&self, dir: &str) -> bool {
+        self.dir == dir
     }
 }
 
@@ -55,13 +51,6 @@ pub fn parse_submission_id(dir_name: &str) -> Option<String> {
         .strip_prefix("submission_")
         .filter(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit()))
         .map(str::to_string)
-}
-
-pub fn build_url(course_id: &str, assignment_id: &str, submission_id: &str) -> String {
-    format!(
-        "{}/courses/{}/assignments/{}/submissions/{}",
-        GRADESCOPE_BASE, course_id, assignment_id, submission_id
-    )
 }
 
 /// Substitutes `{dir}` and `{file:name}` placeholders in a command template.
@@ -106,16 +95,6 @@ mod tests {
         assert_eq!(parse_submission_id("submission_123abc"), None);
     }
 
-    // --- build_url ---
-
-    #[test]
-    fn url_builds_correctly() {
-        assert_eq!(
-            build_url("1217863", "7420607", "403094485"),
-            "https://www.gradescope.com/courses/1217863/assignments/7420607/submissions/403094485"
-        );
-    }
-
     // --- substitute_cmd ---
 
     #[test]
@@ -158,7 +137,7 @@ mod tests {
 
     #[test]
     fn state_mark_and_check_done() {
-        let mut s = GradeState::new("c".into(), "a".into(), "/tmp".into());
+        let mut s = GradeState::new("/tmp".into());
         assert!(!s.is_done("403094485"));
         s.mark_done("403094485".to_string());
         assert!(s.is_done("403094485"));
@@ -166,7 +145,7 @@ mod tests {
 
     #[test]
     fn state_unmark_done() {
-        let mut s = GradeState::new("c".into(), "a".into(), "/tmp".into());
+        let mut s = GradeState::new("/tmp".into());
         s.mark_done("403094485".to_string());
         s.unmark_done("403094485");
         assert!(!s.is_done("403094485"));
@@ -174,31 +153,19 @@ mod tests {
 
     #[test]
     fn state_is_consistent_matching() {
-        let s = GradeState::new("1217863".into(), "7420607".into(), "/tmp/uf2s".into());
-        assert!(s.is_consistent("1217863", "7420607", "/tmp/uf2s"));
-    }
-
-    #[test]
-    fn state_is_consistent_different_course() {
-        let s = GradeState::new("1217863".into(), "7420607".into(), "/tmp/uf2s".into());
-        assert!(!s.is_consistent("9999999", "7420607", "/tmp/uf2s"));
-    }
-
-    #[test]
-    fn state_is_consistent_different_assignment() {
-        let s = GradeState::new("1217863".into(), "7420607".into(), "/tmp/uf2s".into());
-        assert!(!s.is_consistent("1217863", "9999999", "/tmp/uf2s"));
+        let s = GradeState::new("/tmp/uf2s".into());
+        assert!(s.is_consistent("/tmp/uf2s"));
     }
 
     #[test]
     fn state_is_consistent_different_dir() {
-        let s = GradeState::new("1217863".into(), "7420607".into(), "/tmp/uf2s".into());
-        assert!(!s.is_consistent("1217863", "7420607", "/tmp/other"));
+        let s = GradeState::new("/tmp/uf2s".into());
+        assert!(!s.is_consistent("/tmp/other"));
     }
 
     #[test]
     fn state_roundtrips_json() {
-        let mut s = GradeState::new("1217863".into(), "7420607".into(), "/tmp/uf2s".into());
+        let mut s = GradeState::new("/tmp/uf2s".into());
         s.mark_done("403094485".to_string());
 
         let dir = tempfile::tempdir().unwrap();

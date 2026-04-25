@@ -51,16 +51,12 @@ fn main() {
         ),
         Command::Grade {
             dir,
-            course,
-            assignment,
             export,
             cmd,
             state,
             reset,
         } => cli::handlers::handle_grade(
-            dir,         // Option<Utf8PathBuf>
-            course,      // Option<String>
-            assignment,  // Option<String>
+            dir,
             export,
             cmd,
             state,
