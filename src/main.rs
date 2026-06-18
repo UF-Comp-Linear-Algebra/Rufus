@@ -62,5 +62,10 @@ fn main() {
             state,
             *reset,
         ),
+        Command::Search {
+            submissions_paths,
+            phrase,
+            is_regex,
+        } => cli::handlers::handle_search(submissions_paths, phrase, is_regex),
     }
 }

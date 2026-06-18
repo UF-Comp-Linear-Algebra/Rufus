@@ -1,7 +1,13 @@
+use anyhow::Error;
 use camino::Utf8PathBuf;
 use itertools::Itertools;
-use std::collections::BTreeSet;
-use std::io::{self, BufRead, Write};
+use std::{
+    collections::BTreeSet,
+    fs::File,
+    io::{BufRead, BufReader},
+};
+use walkdir::WalkDir;
+use std::io::{self, Write};
 
 use colored::Colorize;
 
@@ -11,7 +17,7 @@ use crate::{
     grade::{done_key, parse_submission_id, substitute_cmd, GradeState},
     gradescope::{
         loaders::{load_export, load_exports},
-        types::{LatestSubmission, Submitter, SubmissionTrait},
+        types::{LatestSubmission, Submitter, SubmissionTrait, EXPORT_FILENAME},
     },
     rufus::{EmissionsGroup, Grouping},
 };
@@ -603,4 +609,122 @@ pub fn handle_grade(
         "Done!".green().bold(),
         n_subs
     );
+}
+
+pub fn handle_search(
+    submissions_paths: &Vec<Utf8PathBuf>,
+    phrase: &String,
+    is_regex: &bool,
+) {
+    if *is_regex {
+        eprintln!("Warning: --pattern/-P is not implemented yet; using plain-text search.");
+    }
+
+    for submissions_path in submissions_paths {
+        // Load export file
+        let export_path = submissions_path.join(EXPORT_FILENAME);
+        print!("Loading export file... ");
+        let export = load_export(&export_path);
+
+        match export {
+            Ok(e) => {
+                println!("DONE");
+                println!("Going through {} submissions... ", e.len());
+
+                // Search each directory submission directory recursively
+                for submission_dir_name in e.keys() {
+                    // Collect the files in the submission directory
+                    // TODO: report directories that can't be stat'd
+                    let sub_dir = submissions_path.join(submission_dir_name);
+                    // println!("Looking in... {}", sub_dir.to_string());
+                    let sub_dir_entries: Vec<_> = WalkDir::new(&sub_dir)
+                        .into_iter()
+                        .filter_map(|entry| match entry {
+                            Ok(e) => Some(e),
+                            Err(err) => {
+                                eprintln!("Warning: failed to read entry under {}: {}", sub_dir, err);
+                                None
+                            }
+                        })
+                        .filter(|f| f.file_type().is_file())
+                        .collect();
+                    // println!("{} files found!", sub_dir_entries.len());
+
+                    // Search through the files and collect results
+                    // TODO: handle that cannot be read
+                    let search_results = sub_dir_entries.into_iter().filter_map(|entry| {
+                        match File::open(entry.path()) {
+                            Ok(f) => match search_file(&f, phrase, None) {
+                                Ok(sections) if !sections.is_empty() => Some((entry, sections)),
+                                Ok(_) => None,
+                                Err(err) => {
+                                    eprintln!(
+                                        "Warning: failed to search {}: {}",
+                                        entry.path().display(),
+                                        err
+                                    );
+                                    None
+                                }
+                            },
+                            Err(err) => {
+                                eprintln!(
+                                    "Warning: failed to open {}: {}",
+                                    entry.path().display(),
+                                    err
+                                );
+                                None
+                            }
+                        }
+                    });
+
+                    // Report results
+                    for (dir, sects) in search_results {
+                        let path = dir.path().to_str();
+                        match path {
+                            Some(path) => {
+                                println!("{}", path.to_string().underline())
+                            }
+                            None => println!("{}", "???".underline()),
+                        }
+
+                        println!("{}\n", sects.join("\n---\n"))
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!(
+                    "Failed to load {} in {} as an export file: {}",
+                    EXPORT_FILENAME, submissions_path, e
+                );
+            }
+        }
+    }
+}
+
+const DEFAULT_DISPLAY_WIDTH: usize = 2;
+
+pub fn search_file(
+    file: &File,
+    phrase: &String,
+    display_width: Option<usize>,
+) -> Result<Vec<String>, Error> {
+    // TODO: consider better way to deal with default values
+    let display_width = display_width.unwrap_or(DEFAULT_DISPLAY_WIDTH);
+
+    // Read in the file as lines
+    let lines: Vec<String> = BufReader::new(file).lines().collect::<Result<_, _>>()?;
+
+    // Collect sections where the search phrase is found
+    let mut sections: Vec<String> = Vec::new();
+    for (line_num, line) in lines.iter().enumerate() {
+        // TODO: implement regex
+        if line.contains(phrase) {
+            let start: usize = line_num.saturating_sub(display_width);
+            let end: usize = (line_num + display_width + 1).min(lines.len());
+
+            sections.push(lines[start..end].join("\n"));
+        }
+    }
+
+    Ok(sections)
 }

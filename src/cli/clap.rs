@@ -143,4 +143,29 @@ pub enum Command {
         #[arg(long, help = "Ignore existing state and start over")]
         reset: bool,
     },
+
+    // TODO: provide help info regarding how metadata file is the source-of-truth
+    // TODO: case-insensitive
+    // TODO: multiple phrases
+    // TODO: regex
+    // TODO: non-typable unicode
+    #[command(about = "Search for a phrase in student submissions files (as plain-text)")]
+    Search {
+        #[clap(required = true)]
+        #[arg(name = "submissions directories")]
+        submissions_paths: Vec<Utf8PathBuf>,
+
+        #[clap(required = true)]
+        #[arg(name = "phrase", help = "Phrase to search for in student files")]
+        // TODO: implement multiple phrases
+        phrase: String,
+
+        #[arg(
+            long = "pattern",
+            short = 'P',
+            default_value = "false",
+            help = "Interpret phrase as a regex pattern (not yet implemented)"
+        )]
+        is_regex: bool,
+    },
 }

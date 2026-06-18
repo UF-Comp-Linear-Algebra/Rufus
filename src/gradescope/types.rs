@@ -3,6 +3,8 @@ use std::collections::HashMap;
 
 use crate::rufus::{Emission, EmissionParseError, EmissionsGroup};
 
+pub const EXPORT_FILENAME: &'static str = "submission_metadata.yml";
+
 pub type Export = HashMap<String, LatestSubmission>;
 
 #[derive(Deserialize, Debug)]
