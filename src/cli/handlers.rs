@@ -614,8 +614,12 @@ pub fn handle_grade(
 pub fn handle_search(
     submissions_paths: &Vec<Utf8PathBuf>,
     phrase: &String,
-    _is_regex: &bool,
-) -> () {
+    is_regex: &bool,
+) {
+    if *is_regex {
+        eprintln!("Warning: --pattern/-P is not implemented yet; using plain-text search.");
+    }
+
     for submissions_path in submissions_paths {
         // Load export file
         let export_path = submissions_path.join(EXPORT_FILENAME);
