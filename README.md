@@ -169,6 +169,25 @@ rufus grade --state ./uf2s/.rufus-grade --export submissions.yml \
 
 ---
 
+### `search`
+
+Search for a phrase across student submission files.
+
+```bash
+rufus search <DIR>... <PHRASE> [OPTIONS]
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--pattern` | `-P` | Interpret phrase as a regex pattern *(not yet implemented)* |
+
+```bash
+# Search all submissions for a specific string
+rufus search ./submissions/ "hello world"
+```
+
+---
+
 ## Development
 
 ### Prerequisites
