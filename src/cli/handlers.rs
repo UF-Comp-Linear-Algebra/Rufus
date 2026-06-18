@@ -633,9 +633,15 @@ pub fn handle_search(
                     // TODO: report directories that can't be stat'd
                     let sub_dir = submissions_path.join(submission_dir_name);
                     // println!("Looking in... {}", sub_dir.to_string());
-                    let sub_dir_entries: Vec<_> = WalkDir::new(sub_dir)
+                    let sub_dir_entries: Vec<_> = WalkDir::new(&sub_dir)
                         .into_iter()
-                        .flatten() // very interesting! we can flatten from Result<T,E>[] to T[]
+                        .filter_map(|entry| match entry {
+                            Ok(e) => Some(e),
+                            Err(err) => {
+                                eprintln!("Warning: failed to read entry under {}: {}", sub_dir, err);
+                                None
+                            }
+                        })
                         .filter(|f| f.file_type().is_file())
                         .collect();
                     // println!("{} files found!", sub_dir_entries.len());
