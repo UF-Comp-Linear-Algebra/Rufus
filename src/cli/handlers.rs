@@ -642,15 +642,30 @@ pub fn handle_search(
 
                     // Search through the files and collect results
                     // TODO: handle that cannot be read
-                    let search_results = sub_dir_entries
-                        .into_iter()
-                        .map(|e| -> Result<(_, Vec<String>), Error> {
-                            let f = File::open(e.path())?;
-                            let sections = search_file(&f, &phrase, None)?;
-                            Ok((e, sections))
-                        })
-                        .flatten()
-                        .filter(|(_, sects)| sects.len() > 0);
+                    let search_results = sub_dir_entries.into_iter().filter_map(|entry| {
+                        match File::open(entry.path()) {
+                            Ok(f) => match search_file(&f, phrase, None) {
+                                Ok(sections) if !sections.is_empty() => Some((entry, sections)),
+                                Ok(_) => None,
+                                Err(err) => {
+                                    eprintln!(
+                                        "Warning: failed to search {}: {}",
+                                        entry.path().display(),
+                                        err
+                                    );
+                                    None
+                                }
+                            },
+                            Err(err) => {
+                                eprintln!(
+                                    "Warning: failed to open {}: {}",
+                                    entry.path().display(),
+                                    err
+                                );
+                                None
+                            }
+                        }
+                    });
 
                     // Report results
                     for (dir, sects) in search_results {
