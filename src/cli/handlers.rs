@@ -625,7 +625,7 @@ pub fn handle_search(
         match export {
             Ok(e) => {
                 println!("DONE");
-                println!("Going through {} submissions... ", e.iter().count());
+                println!("Going through {} submissions... ", e.len());
 
                 // Search each directory submission directory recursively
                 for submission_dir_name in e.keys() {
