@@ -164,7 +164,7 @@ pub enum Command {
             long = "pattern",
             short = 'P',
             default_value = "false",
-            help = "Interpret phrase as a regex pattern"
+            help = "Interpret phrase as a regex pattern (not yet implemented)"
         )]
         is_regex: bool,
     },
