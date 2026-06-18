@@ -1,7 +1,10 @@
 use camino::Utf8PathBuf;
 use clap::{
-    command, crate_authors, crate_description, crate_name, crate_version, Parser, Subcommand,
+    crate_authors, crate_description, crate_name, crate_version, Parser, Subcommand,
 };
+
+use crate::extract::{parse_key_spec, KeySpec, Layout, NameBy};
+
 
 #[derive(Parser)]
 #[command(name = crate_name!(), author=crate_authors!())]
@@ -48,6 +51,97 @@ pub enum Command {
             help = "Only show groups that match exactly on k emissions (removes k+1 group submissions from the k groups)."
         )]
         exact: bool,
+    },
+
+    #[command(about = "Extract extra_data fields from Gradescope export files")]
+    Extract {
+        #[clap(required = true)]
+        #[arg(name = "export files")]
+        filepaths: Vec<Utf8PathBuf>,
+
+        #[arg(
+            long = "key",
+            value_name = "NAME[:DECODE[:EXT]]",
+            value_parser = parse_key_spec,
+            help = "Key to extract. Format: name[:decode[:ext]] (e.g. level_uf2:base64:uf2, checksum::sha256). Repeatable. Default: all keys."
+        )]
+        keys: Vec<KeySpec>,
+
+        #[arg(
+            long,
+            short = 'o',
+            help = "Output directory. If omitted, values are printed to stdout instead of written to files."
+        )]
+        output: Option<Utf8PathBuf>,
+
+        #[arg(
+            long,
+            default_value = "dir",
+            help = "Output layout: 'dir' creates a subdirectory per submission; 'flat' uses prefixed filenames"
+        )]
+        layout: Layout,
+
+        #[arg(
+            long,
+            default_value = "submission_id",
+            value_name = "FIELD",
+            help = "How to name submissions: submission_id, name, email, or sid"
+        )]
+        name_by: NameBy,
+
+        #[arg(long, default_value = "false", help = "List all available keys across submissions and exit")]
+        list: bool,
+
+        #[arg(
+            long,
+            default_value = "false",
+            conflicts_with = "missing_only",
+            help = "Skip submissions that are missing any selected key"
+        )]
+        skip_missing: bool,
+
+        #[arg(
+            long,
+            default_value = "false",
+            conflicts_with = "skip_missing",
+            help = "Only report which submissions are missing selected keys; do not write files"
+        )]
+        missing_only: bool,
+
+        #[arg(long, default_value = "false", help = "Show what would be written without writing anything")]
+        dry_run: bool,
+
+        #[arg(
+            long,
+            short = 'A',
+            default_value = "false",
+            conflicts_with = "output",
+            help = "Write files alongside each source YAML (implies file output)"
+        )]
+        alongside: bool,
+    },
+
+    #[command(about = "Walk extracted submissions and run grading commands")]
+    Grade {
+        #[arg(help = "Directory of extracted submissions. Required on first run; loaded from state file on resume.")]
+        dir: Option<Utf8PathBuf>,
+
+        #[arg(long, short = 'e', help = "Gradescope export YAML to show submitter names")]
+        export: Option<Utf8PathBuf>,
+
+        #[arg(
+            long,
+            short = 'x',
+            value_name = "TEMPLATE",
+            help = "Command to run once per submission. Supports {dir} and {file:name} placeholders."
+        )]
+        cmd: Option<String>,
+
+        #[arg(long, short = 's', help = "Resume state file (default: <dir>/.rufus-grade)")]
+        state: Option<Utf8PathBuf>,
+
+        #[arg(long, help = "Ignore existing state and start over")]
+        reset: bool,
     },
 
     // TODO: provide help info regarding how metadata file is the source-of-truth

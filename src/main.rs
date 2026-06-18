@@ -1,4 +1,6 @@
 mod cli;
+mod extract;
+mod grade;
 mod gradescope;
 mod rufus;
 
@@ -23,6 +25,42 @@ fn main() {
             &show_emissions,
             &(*min_size as usize),
             &exact,
+        ),
+        Command::Extract {
+            filepaths,
+            keys,
+            output,
+            layout,
+            name_by,
+            list,
+            skip_missing,
+            missing_only,
+            dry_run,
+            alongside,
+        } => cli::handlers::handle_extract(
+            filepaths,
+            keys,
+            output,
+            layout,
+            name_by,
+            *list,
+            *skip_missing,
+            *missing_only,
+            *dry_run,
+            *alongside,
+        ),
+        Command::Grade {
+            dir,
+            export,
+            cmd,
+            state,
+            reset,
+        } => cli::handlers::handle_grade(
+            dir,
+            export,
+            cmd,
+            state,
+            *reset,
         ),
         Command::Search {
             submissions_paths,
